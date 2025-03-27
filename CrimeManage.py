@@ -46,38 +46,53 @@ class CrimeManage:
 ###RONNSHITS##############
     def delete_crime_record(self):
         if dbs.checkEmpty("crimes"):
-            messagebox.showerror("Missing Data", "No Crimes to Delete. Please add records first.")
-        elif not dbs.get_crime_not_in_records():
-            messagebox.showerror("No Available Records", "No Available Crimes to Delete.")
+            messagebox.showerror("Missing Data", "No crime Records to delete.")
         else:
-            delCriminal = tk.Toplevel(self.root)
-            delCriminal.title("Delete Crime Record")
-            delCriminal.geometry("800x800+550+100")
-
-            title_label = tk.Label(delCriminal, text="DELETE CRIME RECORD", font=("Arial", 20, "bold"))
+            delRecord = tk.Toplevel(self.root)
+            delRecord.title("Delete Crime Record")
+            delRecord.geometry("800x800+550+100")
+                
+            title_label = tk.Label(delRecord, text="DELETE CRIME RECORD", font=("Arial", 20, "bold"))                
             title_label.pack(padx=10, pady=20)
 
-            frame = tk.Frame(delCriminal)
-            frame.place(relx=0.20, y=80)
-            
-            crime_var = tk.StringVar()
-            crime_var.set("Select Crime")  # Default value
-            crime_list = dbs.get_crime_not_in_records()
-            
-            tk.Label(frame, text="Crime:", font=("Arial", 14, "bold")).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-            crime_dropdown = tk.OptionMenu(frame, crime_var, *[f"{id} - {name}" for id, name in crime_list])
-            crime_dropdown.grid(row=1, column=1, padx=10, pady=10)
-            crime_dropdown.config(width=30, bd=3)
-            
-            def delete():
-                crime_id = crime_var.get().strip(" - ")[0]
-                if crime_id == "Select Criminal":
-                    messagebox.showerror("Error", "Please select a criminal to delete!")
-                    return
+            self.crimIdentry = tk.StringVar()
+
+            tk.Label(delRecord, text="Select a crime to Delete", font=("Arial", 14, "bold")).pack(pady=10)
+            search_entry = tk.Entry(delRecord, font=("Arial", 14), textvariable=self.crimIdentry)
+            search_entry.pack(pady=10)
+                
+            crime_list = tk.Listbox(delRecord, font=("Arial", 12), height=6)
+            crime_list.pack(pady=5, fill=tk.BOTH, expand=True)
+                
+            def populate_crime_list(search_term=""):
+                crime_list.delete(0, tk.END)  # Clear existing items
+                results = dbs.dynSearch(search_term, "crimes")  # Get all records
+                if results:
+                    for row in results:
+                        crime_list.insert(tk.END, f"ID: {row[0]} - {row[1].title()}")
                 else:
+                    crime_list.insert(tk.END, "No crime records found")
+
+                #call the function to populate the listbox
+            populate_crime_list()
+
+                # Bind the search entry to the populate_crime_list function
+            self.crimIdentry.trace_add("write", lambda *args: populate_crime_list(self.crimIdentry.get()))
+                
+            def delete():
+                delete_selected = crime_list.curselection()
+                if not delete_selected:
+                    messagebox.showerror("Error", "Please select a crime record to delete.")
+                    return
+                        
+                delete_selected = crime_list.get(delete_selected[0])
+                crime_id = delete_selected.split()[1]
+                    
+                if messagebox.askyesno("Confirm Deletion", """Are you sure you want to delete this crime record?
+This action will also delete all the records linked to this crime."""):
                     dbs.deleteCrime(crime_id)
-                    messagebox.showinfo("Success", "Criminal record deleted successfully!")
-                    delCriminal.destroy()
-            
-            submit = tk.Button(frame, text="Submit", width=10, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black" ,command=delete)
-            submit.grid(row=2, column=1, padx=2, pady=10)
+                    messagebox.showinfo("Success", "Crime Record deleted successfully!")
+                    populate_crime_list(self.crimIdentry.get())  # Refresh the list after deletion
+
+            delbtn = tk.Button(delRecord, text="Delete", width=10, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black", command=delete)
+            delbtn.pack(pady=10)

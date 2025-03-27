@@ -140,46 +140,9 @@ def checkExist_crimes(crime_id):
     return result is not None
  
 #checks if criminal is available for deletion, if criminal_id is not present in records table
-def get_criminals_not_in_records():
-    conn = sqlite3.connect("criminal_records.db")
-    cur = conn.cursor()
-
-    try:
-        # SQL query to find criminals whose IDs are not in the records table
-        cur.execute("""
-            SELECT criminal_id, criminal_name
-            FROM criminals
-            WHERE criminal_id NOT IN (SELECT criminal_id FROM records)
-        """)
-        criminals_not_in_records = cur.fetchall()
-        return criminals_not_in_records
-    
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-        return []
-    finally:
-        conn.close()
 
 #checks if crimeis available for deletion, if crime_id is not present in records table
-def get_crime_not_in_records():
-    conn = sqlite3.connect("criminal_records.db")
-    cur = conn.cursor()
 
-    try:
-        # SQL query to find criminals whose IDs are not in the records table
-        cur.execute("""
-            SELECT crime_id, crime_name
-            FROM crimes
-            WHERE crime_id NOT IN (SELECT crime_id FROM records)
-        """)
-        crime_not_in_records = cur.fetchall()
-        return crime_not_in_records
-    
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-        return []
-    finally:
-        conn.close()
  ####END of RONNSHITS######
 
 # def getCriminalData(criminal_id):
@@ -216,10 +179,11 @@ def deleteRecord(id):
     cur.execute("DELETE FROM records WHERE record_id = ?", (id,))
     conn.commit()
     conn.close()
-    
+
 def deleteCriminal(id):
     conn = sqlite3.connect("criminal_records.db")
     cur = conn.cursor()
+    cur.execute("DELETE FROM records WHERE criminal_id = ?", (id,))
     cur.execute("DELETE FROM criminals WHERE criminal_id = ?", (id,))
     conn.commit()
     conn.close()
@@ -227,6 +191,7 @@ def deleteCriminal(id):
 def deleteCrime(id):
     conn = sqlite3.connect("criminal_records.db")
     cur = conn.cursor()
+    cur.execute("DELETE FROM records WHERE crime_id = ?", (id,))
     cur.execute("DELETE FROM crimes WHERE crime_id = ?", (id,))
     conn.commit()
     conn.close()
@@ -276,14 +241,14 @@ def searchRecords(id):
     
     #criminals.age, criminals.mugshot,
     query = """
-    
     SELECT 
         records.criminal_id, 
         criminals.criminal_name, 
         crimes.crime_name, 
         records.location, 
         records.year_of_arrest, 
-        records.year_of_release 
+        records.year_of_release, 
+        records.record_id
     FROM records
     INNER JOIN criminals ON records.criminal_id = criminals.criminal_id
     INNER JOIN crimes ON records.crime_id = crimes.crime_id
@@ -307,5 +272,32 @@ def searchCriminal(id):
     result = cur.fetchone()
     return result
     
-
+def dynSearch(temp, type):
+    conn = sqlite3.connect("criminal_records.db")
+    cur = conn.cursor()
+    
+    if not isinstance(temp, (str, int)):
+        conn.close()
+        return []
+    
+    try:
+        if isinstance(temp, str):
+            tempId = "%" + temp + "%"
+        else:
+            tempId = temp
+            
+        if type == "criminals":
+            cur.execute("SELECT criminal_id, criminal_name FROM criminals WHERE criminal_id LIKE ? OR criminal_name LIKE ?", (tempId, tempId))
+            
+        elif type == "crimes":
+            cur.execute("SELECT crime_id, crime_name FROM crimes WHERE crime_id LIKE ? OR crime_name LIKE ?", (tempId, tempId))
+            
+        results = cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        messagebox.showerror("Error", f"An error occurred while searching for the criminal: {e}")
+        results = []
+    finally:
+        conn.close()
+    return results
     

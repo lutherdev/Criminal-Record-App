@@ -10,7 +10,6 @@ import io
 class RecordManage:
     def __init__(self, root):
         self.root = root
-        self.crimIdentry = tk.StringVar()
 
     def add_record(self):   
         if dbs.checkEmpty("criminals") or dbs.checkEmpty("crimes"):
@@ -84,55 +83,39 @@ class RecordManage:
             submit.grid(row=6, column=1, padx=2, pady=10)
 
     def delete_record(self):
-        if dbs.checkEmpty("records"):
-            messagebox.showerror("Missing Data", "No Records to delete.")
-        else:
-            delRecord = tk.Toplevel(self.root)
-            delRecord.title("Delete Record")
-            delRecord.geometry("800x800+550+100")
-                
-            title_label = tk.Label(delRecord, text="DELETE RECORD", font=("Arial", 20, "bold"))                
-            title_label.pack(padx=10, pady=20)
+            if dbs.checkEmpty("records"):
+                messagebox.showerror("Missing Data", "No Records to delete.")
+            else:
+                delRecord = tk.Toplevel(self.root)
+                delRecord.title("Delete Record")
+                delRecord.geometry("800x800+550+100")
 
+                title_label = tk.Label(delRecord, text="DELETE RECORD", font=("Arial", 20, "bold"))
+                title_label.pack(padx=10, pady=20)
 
-            tk.Label(delRecord, text="Select a Record to Delete", font=("Arial", 14, "bold")).pack(pady=10)
-            search_entry = tk.Entry(delRecord, font=("Arial", 14), textvariable=self.crimIdentry)
-            search_entry.pack(pady=10)
-                
-            record_list = tk.Listbox(delRecord, font=("Arial", 12), height=6)
-            record_list.pack(pady=5, fill=tk.BOTH, expand=True)
-                
-            def populate_record_list(search_term=""):
-                record_list.delete(0, tk.END)  # Clear existing items
-                results = dbs.searchRecords(search_term)  # Get all records
-                if results:
-                    for row in results:
-                        record_list.insert(tk.END, f"Record ID: {row[6]} - {row[1].title()} - {row[2].title()} - {row[3].title()} - {row[4]}")
-                else:
-                    record_list.insert(tk.END, "No records found")
+                frame = tk.Frame(delRecord)
+                frame.place(relx=0.20, y=80)
 
-                #call the function to populate the listbox
-            populate_record_list()
+                tk.Label(frame, text="Enter Record ID: ", font=("Arial", 14, "bold")).grid(row=0, column=0, padx=5, pady=10, sticky="e")
+                record_id_entry = tk.Entry(frame, width=30, bd=3)
+                record_id_entry.grid(row=0, column=1, padx=2, pady=10)
 
-                # Bind the search entry to the populate_record_list function
-            self.crimIdentry.trace_add("write", lambda *args: populate_record_list(self.crimIdentry.get()))
-                
-            def delete():
-                delete_selected = record_list.curselection()
-                if not delete_selected:
-                    messagebox.showerror("Error", "Please select a record to delete.")
-                    return
-                        
-                delete_selected = record_list.get(delete_selected[0])
-                record_id = delete_selected.split()[2]
+                def delete():
+                    record_id = record_id_entry.get().strip()
+                    if not record_id:
+                        messagebox.showerror("Error", "Please enter a Criminal ID!")
+                        return
                     
-                if messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this record?"):
-                    dbs.deleteRecord(record_id)
-                    messagebox.showinfo("Success", "Record deleted successfully!")
-                    populate_record_list(self.crimIdentry.get())  # Refresh the list after deletion
+                    if dbs.checkExist_records(record_id):
+                        dbs.deleteRecord(record_id)
+                        messagebox.showinfo("Success", "Record deleted successfully!")
+                        delRecord.destroy()
+                        
+                    else:
+                        messagebox.showerror("Error", "Failed to delete the record!")
 
-            delbtn = tk.Button(delRecord, text="Delete", width=10, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black", command=delete)
-            delbtn.pack(pady=10)
+                enter_btn = tk.Button(frame, text="Enter", width=5, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black", command=delete)
+                enter_btn.grid(row=0, column=3, columnspan=2, padx=20)
     #END#####
 
     
@@ -147,38 +130,27 @@ class RecordManage:
 
         self.crimIdentry = tk.StringVar(value="")
 
-        self.fram1 = tk.Frame(self.add_window, height=200)
-        self.fram1.pack(side=tk.TOP, fill="x")
-        self.fram1.pack_propagate(False)
+        self.label = tk.Label(self.add_window, text="SEARCH CRIMINAL RECORD", font=("Arial", 20, "bold"))
+        self.label.pack(pady=10)
         
-        
-        self.fram2 = tk.Frame(self.fram1, height=300, width=100, bg="lightgray")
-        self.fram2.pack(side=tk.LEFT, fill='both')
-        self.lbl = tk.Label(self.fram2)
-        self.lbl.pack(side=tk.TOP, anchor="w")
-        self.details_label = tk.Label(self.fram2, text="Select a record", font=("Arial", 12), justify="left", anchor="w")
-        self.details_label.pack(side=tk.BOTTOM)
-        
-        self.fram3 = tk.Frame(self.fram1)
-        self.fram3.pack()
-        self.label = tk.Label(self.fram3, text="SEARCH CRIMINAL RECORD", font=("Arial", 20, "bold"))
-        self.label.pack( pady=(30,10))
-        self.search_entry = tk.Entry(self.fram3, font=("Arial", 14), textvariable=self.crimIdentry)
-        self.search_entry.pack(pady=5 )
+        self.search_entry = tk.Entry(self.add_window, font=("Arial", 14), textvariable=self.crimIdentry)
+        self.search_entry.pack(pady=5)
 
-        self.crimIdentry.trace_add("write", lambda *args: self.handle_search()) #matic --- changes in the variable calls the function
+        self.crimIdentry.trace_add("write", lambda *args: self.handle_search())
+        self.search_button = tk.Button(self.add_window, text="Search", font=("Arial", 12), command=self.handle_search)
+        self.search_button.pack(pady=5)
 
-        header_frame = tk.Frame(self.add_window)
-        header_frame.pack(fill=tk.X, padx=10)   
-        headers = ["ID", "Name", "Crime", "Location", "Year of Arrest"]
-        for idx, text in enumerate(headers):
-            tk.Label(header_frame, text=text, font=("Arial", 12, "bold"), width=15, anchor="w").grid(row=0, column=idx)
+        self.results_list = tk.Listbox(self.add_window, font=("Arial", 12), height=6)
+        self.results_list.pack(pady=5, fill=tk.BOTH, expand=True)
 
-        self.results_list = tk.Listbox(self.add_window, font=("Arial", 12), height=20)
-        self.results_list.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.results_list.bind("<<ListboxSelect>>", self.show_details)
-        
-        self.handle_search() #populate t he self.results_list
+
+        self.details_label = tk.Label(self.add_window, text="Select a record", font=("Arial", 12), justify="left")
+        self.details_label.pack(side=tk.LEFT, pady=10)
+        self.lbl = tk.Label(self.add_window)
+        self.lbl.pack(side=tk.LEFT)
+
+        self.handle_search()
 
     def handle_search(self):
         """Fetch records from database and update the listbox."""

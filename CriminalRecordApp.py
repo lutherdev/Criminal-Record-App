@@ -81,7 +81,7 @@ class CriminalRecordApp:
         title_label = tk.Label(delete_window, text="VIEW RECORD", font=("Arial", 20, "bold"))
         title_label.place(relx=0.37, y=20)
 
-        tk.Button(delete_window, text="View Crime Record", width=30, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black").place(x=250, y=100)
+        tk.Button(delete_window, text="View Crime Record", width=30, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black", command=self.record_manager.search_crime_record).place(x=250, y=100)
 
         tk.Button(delete_window, text="View Criminal Record", width=30, bd=5, font=("Arial", 12, "bold"), fg="White", bg="black", command=self.record_manager.search_criminal_record).place(x=250, y=200)
 

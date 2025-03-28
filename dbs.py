@@ -263,6 +263,52 @@ def searchRecords(id):
 
     conn.close()
     return results  
+
+def searchSpecificRecord(id, crime, location, year):
+    conn = sqlite3.connect("criminal_records.db")
+    cur = conn.cursor()
+
+    crimeId = searchCrime(crime)
+    try:
+        cur.execute("""
+                    SELECT
+                    records.year_of_release
+                    FROM records
+                    WHERE records.criminal_id = ? AND records.crime_id = ? AND records.location = ? AND records.year_of_arrest = ?;
+                    """, (id, crimeId[0][0], location, year))
+        results = cur.fetchone()
+        print(results)
+    except:
+        results = []
+
+    conn.close()
+    return results
+    
+
+def searchCrime(id):
+    conn = sqlite3.connect("criminal_records.db")
+    cur = conn.cursor()
+    try:
+        tempId = id + "%" #mag error if INT ung pinasa sa function na to
+    except:
+        tempId = id #this is for INT inputs
+    
+    query = """
+    SELECT 
+        crime_id,
+        crime_name, 
+        confinement
+    FROM crimes
+    WHERE crimes.crime_name LIKE ? OR CAST(crime_id AS TEXT) LIKE ?;
+    """
+    try:
+        cur.execute(query, (tempId, tempId))
+        results = cur.fetchall()
+    except Exception as e:
+        print(f"SQL Error: {e}")  
+        results = []  # Return an empty list 
+    conn.close()
+    return results  
     
 
 def searchCriminal(id):
